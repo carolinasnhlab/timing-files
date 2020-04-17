@@ -1,0 +1,57 @@
+#This is a template R script file to create timing files. The script will create 1 timing file for each condition for each participant. 
+
+#In order to run this script you will need a folder with data for each participant. 
+
+#Naming convention of the files: The files must follow a naming convention such that the filenames are all the same except 
+#they all end with sequential four digit* ID (0000) that start with 0001 and increase numerically by one. 
+#As an example: Project_1_subject_0001; Project_1_subject_0002; etc.
+
+#* This naming convention only works if you have under 1000 participants. For projects with 1000 or more participants use a 5 digit ID
+
+#The files must contain: 
+#a) a column that indicates condition for each row of data, 
+#b) a column that indicates how much time elapsed before the condition occurred (i.e. time onset values), and 
+#c) a column that indicates how much time elapsed during the condition (i.e. time duration values).
+
+#There cannot be any missing data in your file. If any participant is missing data remove them from the "SubjectList" object below. 
+
+library(tidyverse)
+library(dplyr)
+
+#Create a list of your subject IDs (using only the last 3 digits of their ID) below. The forloop will cycle through this list, 
+#and perform a function on each subject ID.
+SubjectList <- c("002","003","004","005")
+
+#Start of the forloop
+#The script below will read in each file for each subject, then pull the onset and duration files for each participant and put 
+#them into 2 separate files (1 for each condition). It will also create a column of 1s for the parametric modulator. 
+#If you have a third condition, simply copy the script for creating the condition 1 data and paste it after condition 2 and 
+#adjust the script as needed.
+
+for (subject in SubjectList) {
+
+#The line below will read in each subjects data. 'read.table' takes at minimum, one arguments (filepath). 
+#Here we are specifying the file path for each subject, by taking the generic filepath and pasting in the subject ID 
+#from our list (with no spaces). We are adding a second, optional argument 'skip' to skip the first row in each txt doc 
+#(with start date and time). Delete the 'skip' argument (, skip=1) if the first row of your data isn't reserved for date/time 
+#information. 
+  
+  data <- read.csv(paste("/Users/keelylab/Desktop/file/path/Project_1_subject_0",
+                           subject, ".csv", sep = "", skip=1))
+
+  condition1 <- data %>%
+    filter(condition=="one") %>%
+    select(onset,duration) %>%
+    mutate(pm=1)
+
+    write.table(condition1, paste("/Users/keelylab/Desktop/file/path/output/", 
+                        subject, "_condition1.txt", sep = ""), row.names=FALSE, col.names = FALSE)
+  
+  condition2 <- data %>%
+    filter(condition=="two") %>%
+    select(onset,duration) %>%
+    mutate(pm=1)
+  
+    write.table(condition2, paste("/Users/keelylab/Desktop/file/path/output/", 
+                        subject, "_condition1.txt", sep = ""), row.names=FALSE, col.names = FALSE)
+}
