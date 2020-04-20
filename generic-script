@@ -2,56 +2,126 @@
 
 #In order to run this script you will need a folder with data for each participant. 
 
-#Naming convention of the files: The files must follow a naming convention such that the filenames are all the same except 
-#they all end with sequential four digit* ID (0000) that start with 0001 and increase numerically by one. 
-#As an example: Project_1_subject_0001; Project_1_subject_0002; etc.
+#Naming convention of the files: The files must follow a naming convention such that the filenames 
+#are all the same except they all end with sequential three digit* ID (101) that start with 101 and 
+#increase numerically by one. As an example: sub_101; sub_102; etc.
 
-#* This naming convention only works if you have under 1000 participants. For projects with 1000 or more participants use a 5 digit ID
+#* This naming convention only works if you have under 1000 participants. 
+#* For projects with 1000 or more participants use a 5 digit ID
 
 #The files must contain: 
 #a) a column that indicates condition for each row of data, 
 #b) a column that indicates how much time elapsed before the condition occurred (i.e. time onset values), and 
 #c) a column that indicates how much time elapsed during the condition (i.e. time duration values).
 
-#There cannot be any missing data in your file. If any participant is missing data remove them from the "SubjectList" object below. 
+#### Script Set-up ####
+rm(list = ls()) 
 
 library(tidyverse)
 library(dplyr)
 
-#Create a list of your subject IDs (using only the last 3 digits of their ID) below. The forloop will cycle through this list, 
-#and perform a function on each subject ID.
-SubjectList <- c("002","003","004","005")
+input <- "~/Google Drive/Courses/2020 Courses/Computational Statistics/Final Project/input_test_project/"    
+output <- "~/Google Drive/Courses/2020 Courses/Computational Statistics/Final Project/output_test_project/" 
+setwd(input)
+
+#Read in files from folder; creates a list of all .csv files in input folder
+file_list <- list.files(path=input, pattern="*.csv") # 
+
+# Create empty list for files to go to
+onsets<-list()
+
+#read in each .csv file in file_list 
+for (i in 1:length(file_list)){
+  onsets[[i]]<-read.table(paste(file_list[i], sep=''), sep=',', header=T)
+}
+
+# name each element in list
+names(onsets)<-file_list
+
+#Below creates a list of the subject IDs (using only the last 3 digits of their ID) below. The loop will cycle 
+#through this list,and perform a function on each subject ID. The numbers 5 and 7 need to be changed to the
+#character number representing the differences in the participant IDs.
+
+sub_IDs <- unique(substr(names(onsets), 5, 7)) 
 
 #Start of the forloop
-#The script below will read in each file for each subject, then pull the onset and duration files for each participant and put 
-#them into 2 separate files (1 for each condition). It will also create a column of 1s for the parametric modulator. 
-#If you have a third condition, simply copy the script for creating the condition 1 data and paste it after condition 2 and 
-#adjust the script as needed.
+#The script below will read in each file for each subject, then pull the onset and duration files for each 
+#participant and put them into 4 separate files (1 for each condition). It will also create a column of 1s 
+#for the parametric modulator. If you have a fifth condition use copy/paste as needed.
 
-for (subject in SubjectList) {
+for (subject in sub_IDs) {
 
 #The line below will read in each subjects data. 'read.table' takes at minimum, one arguments (filepath). 
 #Here we are specifying the file path for each subject, by taking the generic filepath and pasting in the subject ID 
 #from our list (with no spaces). We are adding a second, optional argument 'skip' to skip the first row in each txt doc 
 #(with start date and time). Delete the 'skip' argument (, skip=1) if the first row of your data isn't reserved for date/time 
 #information. 
-  
-  data <- read.csv(paste("/Users/keelylab/Desktop/file/path/Project_1_subject_0",
-                           subject, ".csv", sep = "", skip=1))
+
+  data <- read.csv(paste(input, "sub_",
+                         subject, ".csv", sep = "", skip=1))
 
   condition1 <- data %>%
-    filter(condition=="one") %>%
+    filter(condition=="1") %>%
     select(onset,duration) %>%
     mutate(pm=1)
 
-    write.table(condition1, paste("/Users/keelylab/Desktop/file/path/output/", 
-                        subject, "_condition1.txt", sep = ""), row.names=FALSE, col.names = FALSE)
+  write.table(condition1, paste(output, subject, "_condition1.txt", 
+                                sep = ""), row.names=FALSE, col.names = FALSE)
   
   condition2 <- data %>%
-    filter(condition=="two") %>%
+    filter(condition=="2") %>%
     select(onset,duration) %>%
     mutate(pm=1)
   
-    write.table(condition2, paste("/Users/keelylab/Desktop/file/path/output/", 
-                        subject, "_condition1.txt", sep = ""), row.names=FALSE, col.names = FALSE)
+  write.table(condition2, paste(output, subject, "_condition2.txt", 
+                                sep = ""), row.names=FALSE, col.names = FALSE)
+  condition3 <- data %>%
+    filter(condition=="3") %>%
+    select(onset,duration) %>%
+    mutate(pm=1)
+  
+  write.table(condition3, paste(output, subject, "_condition3.txt", 
+                                sep = ""), row.names=FALSE, col.names = FALSE)
+  condition4 <- data %>%
+    filter(condition=="4") %>%
+    select(onset,duration) %>%
+    mutate(pm=1)
+  
+  write.table(condition4, paste(output, subject, "_condition4.txt", 
+                                sep = ""), row.names=FALSE, col.names = FALSE)
+}
+
+#####Generating Files when missing data#####
+
+sub_files <- setNames(lapply(sub_IDs, function(x) {
+  files <- dir()[startsWith(dir(), paste0("sub_", x))]
+}), sub_IDs)
+
+onsets_sub <- lapply(sub_files, function(x) {
+  out <- dplyr::bind_rows(onsets[names(onsets) %in% x], .id = "file")
+  out
+})
+
+onsets_df <- dplyr::bind_rows(onsets_sub, .id = "ID") ##this requires that we have a column with ID #
+
+
+##Step 2: Get number of times each participant sees each condition and export it to csv
+
+qa <- subset(as.data.frame(with(onsets_df, table(ID,condition)), Freq = 0))
+
+
+##Step 3: Identify who and what is missing data#####
+
+missing <- qa %>%
+  filter(Freq=="0") 
+
+#####Step 4: Creating blank EV for those missing conditions#####
+
+blank<- data.frame(0,0,0)
+
+for (i in 1:nrow(missing)){
+  write.table(blank, 
+              file = paste0(output, missing$ID[i],
+                            "_condition_", missing$condition[i],
+                            ".txt"), sep='\t', col.names = FALSE, row.names = FALSE)
 }
