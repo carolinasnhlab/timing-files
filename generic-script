@@ -10,7 +10,7 @@
 #* For projects with 1000 or more participants use a 5 digit ID
 
 #The files must contain: 
-#a) a column that indicates condition for each row of data, in the template data the column name for conditions is named 'condition'
+#a) a column that indicates condition for each row of data
 #b) a column that indicates how much time elapsed before the condition occurred (i.e. time onset values), and 
 #c) a column that indicates how much time elapsed during the condition (i.e. time duration values).
 
