@@ -10,9 +10,16 @@
 #* For projects with 1000 or more participants use a 5 digit ID
 
 #The files must contain: 
-#a) a column that indicates condition for each row of data, 
+#a) a column that indicates condition for each row of data, in the template data the column name for conditions is named 'condition'
 #b) a column that indicates how much time elapsed before the condition occurred (i.e. time onset values), and 
 #c) a column that indicates how much time elapsed during the condition (i.e. time duration values).
+
+#Naming conventions for example data and in this template script below
+#a) condition = condition
+#b) onset values = onset
+#c) time duration values = duration
+#d) subject IDs = ID
+#e) csv. file prefix = sub_
 
 #### Script Set-up ####
 rm(list = ls()) 
@@ -40,7 +47,9 @@ names(onsets)<-file_list
 
 #Below creates a list of the subject IDs (using only the last 3 digits of their ID) below. The loop will cycle 
 #through this list,and perform a function on each subject ID. The numbers 5 and 7 need to be changed to the
-#character number representing the differences in the participant IDs.
+#character number representing the min and max length of the participant IDs. So for the example data files, 
+#sub_102.csv, sub_1 makes up 5 characters, and the total length of sub_102 equals 7 characters. This tells R 
+#to extract the part of the file name that represents the full participant ID.
 
 sub_IDs <- unique(substr(names(onsets), 5, 7)) 
 
@@ -53,12 +62,12 @@ for (subject in sub_IDs) {
 
 #The line below will read in each subjects data. 'read.table' takes at minimum, one arguments (filepath). 
 #Here we are specifying the file path for each subject, by taking the generic filepath and pasting in the subject ID 
-#from our list (with no spaces). We are adding a second, optional argument 'skip' to skip the first row in each txt doc 
-#(with start date and time). Delete the 'skip' argument (, skip=1) if the first row of your data isn't reserved for date/time 
-#information. 
+#from our list (with no spaces). You can add a second, optional argument 'skip' to skip the first row in each txt doc 
+#(with start date and time). For example, you can add the 'skip' argument (, skip=1) if the first row of your data is reserved 
+#for date/time information. 
 
   data <- read.csv(paste(input, "sub_",
-                         subject, ".csv", sep = "", skip=1))
+                         subject, ".csv", sep = ""))
 
   condition1 <- data %>%
     filter(condition=="1") %>%
